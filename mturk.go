@@ -1,4 +1,4 @@
-package main
+package mtwerk
 
 import (
 	"bytes"
@@ -21,10 +21,11 @@ import (
 const (
 	QUESTION_FORM_SCHEMA_URL = "http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionForm.xsd"
 	HTML_QUESTION_SCHEMA_URL = "http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd"
+	MAX_QUESTION_SIZE        = 65535 // Specified by Amazon
 )
 
 func executePostQuery(auth *aws.Auth, queryUrl, service, operation string, v url.Values, result interface{}) error {
-	sign(*awsAuth, service, operation, v)
+	sign(*auth, service, operation, v)
 	resp, err := http.PostForm(queryUrl, v)
 	if err != nil {
 		return err
@@ -48,7 +49,7 @@ func sign(auth aws.Auth, service, operation string, v url.Values) {
 	v.Set("Signature", string(signature))
 	v.Set("Operation", operation)
 	v.Set("Version", "2012-03-25")
-	v.Set("AWSAccessKeyId", awsAuth.AccessKey)
+	v.Set("AWSAccessKeyId", auth.AccessKey)
 	v.Set("Timestamp", timestamp)
 }
 
@@ -101,7 +102,7 @@ func CreateHIT(auth *aws.Auth, title string, description string, questionContent
 	return &result, err
 }
 
-func SearchHIT(v url.Values) (*SearchHITsResponse, error) {
+func SearchHIT(auth *aws.Auth, v url.Values) (*SearchHITsResponse, error) {
 	const OPERATION = "SearchHITs"
 	const QUERY_URL = "https://mechanicalturk.amazonaws.com/?Service=AWSMechanicalTurkRequester"
 	const SERVICE = "AWSMechanicalTurkRequester"
@@ -109,7 +110,7 @@ func SearchHIT(v url.Values) (*SearchHITsResponse, error) {
 		v = url.Values{}
 	}
 
-	sign(*awsAuth, SERVICE, OPERATION, v)
+	sign(*auth, SERVICE, OPERATION, v)
 
 	resp, err := http.PostForm(QUERY_URL, v)
 	if err != nil {
